@@ -19,6 +19,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     Optional<Notification> findByIdAndRecipient(Long id, User recipient);
 
+    boolean existsByActor(User actor);
+
     /**
      * Detaches a user from any notification where they are the actor (e.g. "X completed
      * task Y"), used before permanently deleting their account so the FK constraint

@@ -104,7 +104,8 @@ public class UserServiceImpl implements UserService {
             return "Đã xóa hẳn tài khoản nhân viên và toàn bộ lịch sử công việc liên quan";
         }
 
-        if (!todoRepository.existsByAssignee(employee)) {
+        boolean hasHistory = todoRepository.existsByAssignee(employee) || notificationRepository.existsByActor(employee);
+        if (!hasHistory) {
             userRepository.delete(employee);
             return "Đã xóa tài khoản nhân viên";
         }

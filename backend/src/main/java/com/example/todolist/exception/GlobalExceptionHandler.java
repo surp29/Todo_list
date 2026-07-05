@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -20,20 +21,8 @@ import java.util.List;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(TodoNotFoundException.class)
-    public ResponseEntity<ApiResponseDTO<Void>> handleTodoNotFound(TodoNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponseDTO.error(ex.getMessage(), List.of(ex.getMessage())));
-    }
-
-    @ExceptionHandler(NotificationNotFoundException.class)
-    public ResponseEntity<ApiResponseDTO<Void>> handleNotificationNotFound(NotificationNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponseDTO.error(ex.getMessage(), List.of(ex.getMessage())));
-    }
-
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ApiResponseDTO<Void>> handleUserNotFound(UserNotFoundException ex) {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiResponseDTO<Void>> handleResourceNotFound(ResourceNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponseDTO.error(ex.getMessage(), List.of(ex.getMessage())));
     }
@@ -75,6 +64,13 @@ public class GlobalExceptionHandler {
                 .toList();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponseDTO.error("Dữ liệu không hợp lệ", errors));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponseDTO<Void>> handleMalformedJson(HttpMessageNotReadableException ex) {
+        String message = "Dữ liệu gửi lên không đúng định dạng";
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponseDTO.error(message, List.of(message)));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

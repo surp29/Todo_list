@@ -90,7 +90,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 continue;
             }
 
-            double weight = priorityWeight(todo.getPriority());
+            double weight = todo.getPriority().getWeight();
             possiblePoints += weight;
             countableAssigned++;
 
@@ -136,14 +136,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .onTimeRate(round1(onTimeRate))
                 .productivityScore(round1(productivityScore))
                 .build();
-    }
-
-    private double priorityWeight(TodoPriority priority) {
-        return switch (priority) {
-            case LOW -> 1;
-            case MEDIUM -> 2;
-            case HIGH -> 3;
-        };
     }
 
     private double round1(double value) {
