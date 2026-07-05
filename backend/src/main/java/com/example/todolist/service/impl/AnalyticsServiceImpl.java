@@ -21,14 +21,20 @@ import java.util.List;
 /**
  * Default implementation of {@link AnalyticsService}.
  * <p>
- * <b>Productivity score formula.</b> Each task contributes points equal to its
- * priority weight (LOW=1, MEDIUM=2, HIGH=3) to a "possible points" pool. A
+ * <b>Productivity score formula.</b> Each countable task contributes points equal
+ * to its priority weight (LOW=1, MEDIUM=2, HIGH=3) to a "possible points" pool. A
  * completed task earns its full weight if finished on or before its due date
  * (or has no due date); a task completed <i>after</i> its due date earns only
  * half its weight (a lateness penalty). An unfinished task earns nothing yet.
  * The score is {@code earnedPoints / possiblePoints * 100}, so it rewards
  * finishing more work, finishing higher-priority work, and finishing on time —
  * all in one 0-100 number that is easy to rank employees by.
+ * <p>
+ * <b>{@code ON_HOLD} tasks are excluded entirely</b> from {@code totalAssigned},
+ * the points pool and the overdue count — an employee who legitimately pauses a
+ * task (blocked, reprioritized onto something more urgent, etc.) is neither
+ * rewarded nor penalized for it. They are still reported via {@code onHoldCount}
+ * so a Leader can see them.
  */
 @Service
 @RequiredArgsConstructor
@@ -69,16 +75,24 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private EmployeeProductivityDTO computeProductivity(User employee, List<Todo> todos) {
         long pending = 0;
         long inProgress = 0;
+        long onHold = 0;
         long completed = 0;
         long overdue = 0;
         long onTimeCompleted = 0;
+        long countableAssigned = 0;
         double possiblePoints = 0;
         double earnedPoints = 0;
         LocalDate today = LocalDate.now();
 
         for (Todo todo : todos) {
+            if (todo.getStatus() == TodoStatus.ON_HOLD) {
+                onHold++;
+                continue;
+            }
+
             double weight = priorityWeight(todo.getPriority());
             possiblePoints += weight;
+            countableAssigned++;
 
             switch (todo.getStatus()) {
                 case PENDING -> pending++;
@@ -94,6 +108,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                         earnedPoints += weight * LATE_COMPLETION_FACTOR;
                     }
                 }
+                default -> { /* ON_HOLD already handled above */ }
             }
 
             if (todo.getStatus() != TodoStatus.COMPLETED
@@ -103,8 +118,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             }
         }
 
-        long totalAssigned = todos.size();
-        double completionRate = totalAssigned == 0 ? 0 : (completed * 100.0 / totalAssigned);
+        double completionRate = countableAssigned == 0 ? 0 : (completed * 100.0 / countableAssigned);
         double onTimeRate = completed == 0 ? 0 : (onTimeCompleted * 100.0 / completed);
         double productivityScore = possiblePoints == 0 ? 0 : (earnedPoints / possiblePoints * 100.0);
 
@@ -112,9 +126,10 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .employeeId(employee.getId())
                 .employeeName(employee.getFullName())
                 .position(employee.getPosition())
-                .totalAssigned(totalAssigned)
+                .totalAssigned(countableAssigned)
                 .pendingCount(pending)
                 .inProgressCount(inProgress)
+                .onHoldCount(onHold)
                 .completedCount(completed)
                 .overdueCount(overdue)
                 .completionRate(round1(completionRate))

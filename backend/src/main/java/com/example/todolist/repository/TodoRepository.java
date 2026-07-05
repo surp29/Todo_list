@@ -7,6 +7,7 @@ import com.example.todolist.model.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -42,4 +43,19 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
      * to compute productivity metrics (no pagination — an employee's full task history).
      */
     List<Todo> findByAssignee(User assignee);
+
+    /**
+     * Checks whether a user has any assigned todos at all, used to decide whether
+     * deleting their account can be a hard delete or must fall back to deactivation.
+     */
+    boolean existsByAssignee(User assignee);
+
+    /**
+     * Permanently deletes every todo assigned to the given user. Only called when
+     * permanently (not soft-) deleting an employee, who explicitly accepted losing
+     * their task history in exchange for freeing up the account.
+     */
+    @Modifying
+    @Query("DELETE FROM Todo t WHERE t.assignee = :assignee")
+    void deleteByAssignee(@Param("assignee") User assignee);
 }

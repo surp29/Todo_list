@@ -25,6 +25,7 @@ public class UserResponseDTO {
     private String fullName;
     private String position;
     private Role role;
+    private boolean active;
     private LocalDateTime createdAt;
 
     public static UserResponseDTO from(User user) {
@@ -34,6 +35,7 @@ public class UserResponseDTO {
                 .fullName(user.getFullName())
                 .position(user.getPosition())
                 .role(user.getRole())
+                .active(user.isActive())
                 .createdAt(user.getCreatedAt())
                 .build();
     }

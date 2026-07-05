@@ -125,6 +125,40 @@ class AnalyticsServiceTest {
     }
 
     @Test
+    void test_getProductivityOverview_onHoldTask_excludedFromScoreAndOverdue() {
+        when(userRepository.findByRole(Role.EMPLOYEE)).thenReturn(List.of(employee));
+        List<Todo> todos = List.of(
+                // Completed on time -> should be the only task counted toward the score.
+                todo(TodoPriority.HIGH, TodoStatus.COMPLETED, LocalDate.now().plusDays(1), LocalDateTime.now()),
+                // On hold with a due date in the past: must NOT count as overdue or hurt the score.
+                todo(TodoPriority.HIGH, TodoStatus.ON_HOLD, LocalDate.now().minusDays(5), LocalDateTime.now())
+        );
+        when(todoRepository.findByAssignee(employee)).thenReturn(todos);
+
+        ProductivityOverviewDTO result = analyticsService.getProductivityOverview();
+
+        var stats = result.getEmployees().get(0);
+        assertThat(stats.getProductivityScore()).isEqualTo(100.0);
+        assertThat(stats.getOnHoldCount()).isEqualTo(1);
+        assertThat(stats.getOverdueCount()).isEqualTo(0);
+        assertThat(stats.getTotalAssigned()).isEqualTo(1);
+    }
+
+    @Test
+    void test_getProductivityOverview_onlyOnHoldTasks_scoresZeroNotError() {
+        when(userRepository.findByRole(Role.EMPLOYEE)).thenReturn(List.of(employee));
+        List<Todo> todos = List.of(todo(TodoPriority.MEDIUM, TodoStatus.ON_HOLD, null, LocalDateTime.now()));
+        when(todoRepository.findByAssignee(employee)).thenReturn(todos);
+
+        ProductivityOverviewDTO result = analyticsService.getProductivityOverview();
+
+        var stats = result.getEmployees().get(0);
+        assertThat(stats.getProductivityScore()).isEqualTo(0.0);
+        assertThat(stats.getOnHoldCount()).isEqualTo(1);
+        assertThat(stats.getTotalAssigned()).isEqualTo(0);
+    }
+
+    @Test
     void test_getProductivityOverview_noEmployees_returnsEmptyOverview() {
         when(userRepository.findByRole(Role.EMPLOYEE)).thenReturn(List.of());
 

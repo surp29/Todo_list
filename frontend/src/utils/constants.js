@@ -1,24 +1,28 @@
 export const STATUS = {
   PENDING: 'PENDING',
   IN_PROGRESS: 'IN_PROGRESS',
+  ON_HOLD: 'ON_HOLD',
   COMPLETED: 'COMPLETED',
 };
 
 export const STATUS_LABEL = {
   [STATUS.PENDING]: 'Chưa làm',
   [STATUS.IN_PROGRESS]: 'Đang làm',
+  [STATUS.ON_HOLD]: 'Tạm hoãn',
   [STATUS.COMPLETED]: 'Hoàn thành',
 };
 
 export const STATUS_BADGE_CLASS = {
   [STATUS.PENDING]: 'bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200',
   [STATUS.IN_PROGRESS]: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200',
+  [STATUS.ON_HOLD]: 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200',
   [STATUS.COMPLETED]: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200',
 };
 
 export const STATUS_DOT_CLASS = {
   [STATUS.PENDING]: 'bg-slate-400',
   [STATUS.IN_PROGRESS]: 'bg-blue-500',
+  [STATUS.ON_HOLD]: 'bg-amber-500',
   [STATUS.COMPLETED]: 'bg-emerald-500',
 };
 

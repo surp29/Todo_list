@@ -123,6 +123,7 @@ export default function ProductivityChart() {
               <th className="px-4 py-3 font-medium">Tổng việc</th>
               <th className="px-4 py-3 font-medium">Chưa làm</th>
               <th className="px-4 py-3 font-medium">Đang làm</th>
+              <th className="px-4 py-3 font-medium">Tạm hoãn</th>
               <th className="px-4 py-3 font-medium">Hoàn thành</th>
               <th className="px-4 py-3 font-medium">Quá hạn</th>
               <th className="px-4 py-3 font-medium">Tỷ lệ hoàn thành</th>
@@ -138,6 +139,7 @@ export default function ProductivityChart() {
                 <td className="px-4 py-2.5 tabular-nums">{emp.totalAssigned}</td>
                 <td className="px-4 py-2.5 tabular-nums">{emp.pendingCount}</td>
                 <td className="px-4 py-2.5 tabular-nums">{emp.inProgressCount}</td>
+                <td className="px-4 py-2.5 tabular-nums">{emp.onHoldCount}</td>
                 <td className="px-4 py-2.5 tabular-nums">{emp.completedCount}</td>
                 <td className="px-4 py-2.5 tabular-nums">{emp.overdueCount}</td>
                 <td className="px-4 py-2.5 tabular-nums">{emp.completionRate}%</td>

@@ -32,6 +32,12 @@ public class GlobalExceptionHandler {
                 .body(ApiResponseDTO.error(ex.getMessage(), List.of(ex.getMessage())));
     }
 
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiResponseDTO<Void>> handleUserNotFound(UserNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponseDTO.error(ex.getMessage(), List.of(ex.getMessage())));
+    }
+
     @ExceptionHandler(DuplicateUsernameException.class)
     public ResponseEntity<ApiResponseDTO<Void>> handleDuplicateUsername(DuplicateUsernameException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -40,8 +46,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiResponseDTO<Void>> handleAuthenticationException(AuthenticationException ex) {
+        // Deliberately does not echo ex.getMessage() (e.g. "User is disabled") — that would let an
+        // attacker distinguish "wrong password" from "account deactivated" and enumerate usernames.
+        String message = "Tên đăng nhập hoặc mật khẩu không đúng";
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponseDTO.error("Tên đăng nhập hoặc mật khẩu không đúng", List.of(ex.getMessage())));
+                .body(ApiResponseDTO.error(message, List.of(message)));
     }
 
     @ExceptionHandler(AccessDeniedException.class)

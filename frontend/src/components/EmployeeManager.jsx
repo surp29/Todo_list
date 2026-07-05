@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { FiUserPlus, FiX } from 'react-icons/fi';
+import { FiEdit2, FiKey, FiTrash2, FiUserPlus, FiUserX, FiX } from 'react-icons/fi';
+import ConfirmDialog from './ConfirmDialog';
 
-const schema = yup.object({
+const createSchema = yup.object({
   fullName: yup.string().trim().required('Vui lòng nhập họ tên'),
   position: yup.string().trim().nullable(),
   username: yup
@@ -15,17 +16,187 @@ const schema = yup.object({
   password: yup.string().min(6, 'Mật khẩu phải từ 6 ký tự').required('Vui lòng nhập mật khẩu'),
 });
 
+const editSchema = yup.object({
+  fullName: yup.string().trim().required('Vui lòng nhập họ tên'),
+  position: yup.string().trim().nullable(),
+});
+
+const passwordSchema = yup.object({
+  newPassword: yup.string().min(6, 'Mật khẩu phải từ 6 ký tự').required('Vui lòng nhập mật khẩu mới'),
+});
+
 const inputClass =
   'w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100';
 
-export default function EmployeeManager({ employees, onCreate, onClose }) {
+const smallInputClass =
+  'w-full rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100';
+
+function EmployeeRow({ employee, onUpdate, onResetPassword, onRequestRemove }) {
+  const [mode, setMode] = useState('view'); // 'view' | 'edit' | 'password'
+  const [rowError, setRowError] = useState('');
+
+  const editForm = useForm({
+    resolver: yupResolver(editSchema),
+    defaultValues: { fullName: employee.fullName, position: employee.position || '' },
+  });
+  const passwordForm = useForm({ resolver: yupResolver(passwordSchema) });
+
+  const cancel = () => {
+    setMode('view');
+    setRowError('');
+    editForm.reset({ fullName: employee.fullName, position: employee.position || '' });
+    passwordForm.reset({ newPassword: '' });
+  };
+
+  const submitEdit = async (values) => {
+    setRowError('');
+    try {
+      await onUpdate(employee.id, values);
+      setMode('view');
+    } catch (err) {
+      setRowError(err.response?.data?.message || 'Cập nhật thất bại');
+    }
+  };
+
+  const submitPassword = async (values) => {
+    setRowError('');
+    try {
+      await onResetPassword(employee.id, values.newPassword);
+      setMode('view');
+      passwordForm.reset({ newPassword: '' });
+    } catch (err) {
+      setRowError(err.response?.data?.message || 'Đặt lại mật khẩu thất bại');
+    }
+  };
+
+  if (mode === 'edit') {
+    return (
+      <form
+        onSubmit={editForm.handleSubmit(submitEdit)}
+        className="space-y-2 rounded-lg border border-indigo-200 bg-indigo-50/40 p-3"
+      >
+        <div className="grid grid-cols-2 gap-2">
+          <input {...editForm.register('fullName')} placeholder="Họ tên" className={smallInputClass} />
+          <input {...editForm.register('position')} placeholder="Chức vụ" className={smallInputClass} />
+        </div>
+        {(editForm.formState.errors.fullName || rowError) && (
+          <p className="text-xs text-rose-500">{editForm.formState.errors.fullName?.message || rowError}</p>
+        )}
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={cancel} className="rounded-md px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100">
+            Hủy
+          </button>
+          <button
+            type="submit"
+            disabled={editForm.formState.isSubmitting}
+            className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+          >
+            Lưu
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  if (mode === 'password') {
+    return (
+      <form
+        onSubmit={passwordForm.handleSubmit(submitPassword)}
+        className="space-y-2 rounded-lg border border-amber-200 bg-amber-50/40 p-3"
+      >
+        <p className="text-xs text-slate-500">
+          Đặt mật khẩu mới cho <span className="font-medium text-slate-700">{employee.fullName}</span>
+        </p>
+        <input
+          {...passwordForm.register('newPassword')}
+          type="text"
+          placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"
+          className={smallInputClass}
+        />
+        {(passwordForm.formState.errors.newPassword || rowError) && (
+          <p className="text-xs text-rose-500">{passwordForm.formState.errors.newPassword?.message || rowError}</p>
+        )}
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={cancel} className="rounded-md px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100">
+            Hủy
+          </button>
+          <button
+            type="submit"
+            disabled={passwordForm.formState.isSubmitting}
+            className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-60"
+          >
+            Đặt lại mật khẩu
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2.5">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
+        {employee.fullName.charAt(0).toUpperCase()}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+          <span className="truncate">{employee.fullName}</span>
+          {employee.position && <span className="font-normal text-slate-400">· {employee.position}</span>}
+          {!employee.active && (
+            <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+              Đã nghỉ việc
+            </span>
+          )}
+        </p>
+        <p className="text-xs text-slate-400">@{employee.username}</p>
+      </div>
+
+      {employee.active ? (
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            onClick={() => setMode('edit')}
+            title="Sửa thông tin"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-indigo-50 hover:text-indigo-600"
+          >
+            <FiEdit2 className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => setMode('password')}
+            title="Đổi mật khẩu"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-amber-50 hover:text-amber-600"
+          >
+            <FiKey className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => onRequestRemove(employee, false)}
+            title="Xóa nhân viên"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+          >
+            <FiTrash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => onRequestRemove(employee, true)}
+          title="Xóa hẳn khỏi hệ thống"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-rose-200 px-2.5 py-1.5 text-xs font-medium text-rose-600 transition hover:bg-rose-50"
+        >
+          <FiUserX className="h-3.5 w-3.5" />
+          Xóa
+        </button>
+      )}
+    </div>
+  );
+}
+
+export default function EmployeeManager({ employees, onCreate, onUpdate, onResetPassword, onRemove, onClose }) {
   const [serverError, setServerError] = useState('');
+  const [removeRequest, setRemoveRequest] = useState(null); // { employee, force }
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm({ resolver: yupResolver(schema) });
+  } = useForm({ resolver: yupResolver(createSchema) });
 
   const submitHandler = async (values) => {
     setServerError('');
@@ -35,6 +206,12 @@ export default function EmployeeManager({ employees, onCreate, onClose }) {
     } catch (err) {
       setServerError(err.response?.data?.message || 'Tạo tài khoản thất bại');
     }
+  };
+
+  const confirmRemove = async () => {
+    const { employee, force } = removeRequest;
+    setRemoveRequest(null);
+    await onRemove(employee.id, force);
   };
 
   return (
@@ -84,25 +261,30 @@ export default function EmployeeManager({ employees, onCreate, onClose }) {
               </p>
             )}
             {employees.map((emp) => (
-              <div
+              <EmployeeRow
                 key={emp.id}
-                className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2.5"
-              >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
-                  {emp.fullName.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-700">
-                    {emp.fullName}
-                    {emp.position && <span className="ml-1.5 font-normal text-slate-400">· {emp.position}</span>}
-                  </p>
-                  <p className="text-xs text-slate-400">@{emp.username}</p>
-                </div>
-              </div>
+                employee={emp}
+                onUpdate={onUpdate}
+                onResetPassword={onResetPassword}
+                onRequestRemove={(employee, force) => setRemoveRequest({ employee, force })}
+              />
             ))}
           </div>
         </div>
       </div>
+
+      {removeRequest && (
+        <ConfirmDialog
+          title={removeRequest.force ? 'Xóa hẳn khỏi hệ thống' : 'Xóa nhân viên'}
+          message={
+            removeRequest.force
+              ? `Xóa vĩnh viễn tài khoản "${removeRequest.employee.fullName}" cùng TOÀN BỘ công việc và lịch sử năng suất liên quan? Hành động này không thể hoàn tác. Username sẽ được giải phóng để tạo tài khoản mới.`
+              : `Bạn có chắc muốn xóa "${removeRequest.employee.fullName}"? Nếu nhân viên đã có lịch sử công việc, tài khoản sẽ được vô hiệu hóa thay vì xóa hẳn để giữ số liệu năng suất.`
+          }
+          onConfirm={confirmRemove}
+          onCancel={() => setRemoveRequest(null)}
+        />
+      )}
     </div>
   );
 }

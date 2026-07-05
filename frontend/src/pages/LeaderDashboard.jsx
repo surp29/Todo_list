@@ -37,7 +37,7 @@ export default function LeaderDashboard() {
     clearToast,
   } = useTodos({ withAssignee: true });
 
-  const { employees, createEmployee } = useEmployees();
+  const { employees, activeEmployees, createEmployee, updateEmployee, resetPassword, removeEmployee } = useEmployees();
 
   const [tab, setTab] = useState('tasks'); // 'tasks' | 'productivity'
   const [view, setView] = useState('list'); // 'list' | 'board'
@@ -45,6 +45,7 @@ export default function LeaderDashboard() {
   const [editingTodo, setEditingTodo] = useState(null);
   const [deletingTodo, setDeletingTodo] = useState(null);
   const [isEmployeeManagerOpen, setIsEmployeeManagerOpen] = useState(false);
+  const [employeeToast, setEmployeeToast] = useState(null);
 
   const changeView = (newView) => {
     setView(newView);
@@ -81,6 +82,31 @@ export default function LeaderDashboard() {
   const handleBoardStatusChange = async (todoId, newStatus) => {
     const success = await changeStatus(todoId, newStatus);
     if (!success) await fetchTodos();
+  };
+
+  const handleUpdateEmployee = async (id, data) => {
+    const result = await updateEmployee(id, data);
+    setEmployeeToast({ type: 'success', message: 'Cập nhật thông tin nhân viên thành công', id: Date.now() });
+    return result;
+  };
+
+  const handleResetPassword = async (id, newPassword) => {
+    const result = await resetPassword(id, newPassword);
+    setEmployeeToast({ type: 'success', message: 'Đặt lại mật khẩu thành công', id: Date.now() });
+    return result;
+  };
+
+  const handleRemoveEmployee = async (id, force) => {
+    try {
+      const result = await removeEmployee(id, force);
+      setEmployeeToast({ type: 'success', message: result.message, id: Date.now() });
+    } catch (err) {
+      setEmployeeToast({
+        type: 'error',
+        message: err.response?.data?.message || 'Xóa nhân viên thất bại',
+        id: Date.now(),
+      });
+    }
   };
 
   return (
@@ -135,7 +161,7 @@ export default function LeaderDashboard() {
       ) : (
         <>
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <TodoFilter filters={filters} employees={employees} onChange={updateFilters} onReset={resetFilters} />
+            <TodoFilter filters={filters} employees={activeEmployees} onChange={updateFilters} onReset={resetFilters} />
             <ViewToggle view={view} onChange={changeView} />
           </div>
 
@@ -173,7 +199,7 @@ export default function LeaderDashboard() {
       {isFormOpen && (
         <TodoForm
           initialData={editingTodo}
-          employees={employees}
+          employees={activeEmployees}
           onSubmit={handleFormSubmit}
           onClose={closeForm}
         />
@@ -183,6 +209,9 @@ export default function LeaderDashboard() {
         <EmployeeManager
           employees={employees}
           onCreate={createEmployee}
+          onUpdate={handleUpdateEmployee}
+          onResetPassword={handleResetPassword}
+          onRemove={handleRemoveEmployee}
           onClose={() => setIsEmployeeManagerOpen(false)}
         />
       )}
@@ -197,6 +226,7 @@ export default function LeaderDashboard() {
       )}
 
       <Toast toast={toast} onClose={clearToast} />
+      <Toast toast={employeeToast} onClose={() => setEmployeeToast(null)} />
     </Layout>
   );
 }

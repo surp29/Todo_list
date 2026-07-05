@@ -55,6 +55,10 @@ public class User implements UserDetails {
     @Column(nullable = false, length = 20)
     private Role role;
 
+    @Column(nullable = false, columnDefinition = "boolean not null default true")
+    @Builder.Default
+    private boolean active = true;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -81,6 +85,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return active;
     }
 }

@@ -23,6 +23,7 @@ public class EmployeeProductivityDTO {
     private long totalAssigned;
     private long pendingCount;
     private long inProgressCount;
+    private long onHoldCount;
     private long completedCount;
     private long overdueCount;
     private double completionRate;

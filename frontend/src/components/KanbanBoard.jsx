@@ -2,11 +2,12 @@ import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { FiCalendar, FiUser } from 'react-icons/fi';
 import { PRIORITY_BADGE_CLASS, PRIORITY_LABEL, STATUS, STATUS_LABEL } from '../utils/constants';
 
-const COLUMNS = [STATUS.PENDING, STATUS.IN_PROGRESS, STATUS.COMPLETED];
+const COLUMNS = [STATUS.PENDING, STATUS.IN_PROGRESS, STATUS.ON_HOLD, STATUS.COMPLETED];
 
 const COLUMN_HEADER_CLASS = {
   [STATUS.PENDING]: 'border-slate-200 bg-slate-50 text-slate-600',
   [STATUS.IN_PROGRESS]: 'border-blue-200 bg-blue-50 text-blue-700',
+  [STATUS.ON_HOLD]: 'border-amber-200 bg-amber-50 text-amber-700',
   [STATUS.COMPLETED]: 'border-emerald-200 bg-emerald-50 text-emerald-700',
 };
 
@@ -27,7 +28,7 @@ export default function KanbanBoard({ todos, showAssignee, onStatusChange }) {
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {COLUMNS.map((status) => (
           <div key={status} className="flex flex-col rounded-xl border border-slate-200 bg-slate-50/50">
             <div
