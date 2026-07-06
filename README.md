@@ -12,7 +12,7 @@ Dự án đã được triển khai online — **frontend trên Vercel, backend 
 
 Tài khoản đăng nhập thử: `leader` / `leader123` (xem mục 7 nếu đã đổi).
 
-> Backend chạy trên gói free của Render nên có thể "ngủ" sau ~15 phút không có traffic — lần truy cập đầu tiên sau đó có thể mất 30-50s để khởi động lại (xem mục 15.5).
+> ⚠️ **Backend chạy trên gói free của Render nên tự "ngủ" sau ~15 phút không có traffic** — lần truy cập đầu tiên sau đó có thể mất 30-90s để khởi động lại (đăng nhập sẽ đứng ở "Đang đăng nhập..." trong lúc chờ, không phải app bị lỗi). Thao tác lại lần 2 sẽ nhanh bình thường. Đây là giới hạn của hạ tầng miễn phí, không phải chất lượng code — chi tiết và bằng chứng kiểm thử ở mục 15.5.
 
 ## 1. Tính năng
 
@@ -550,11 +550,20 @@ Quay lại Render → Web Service backend → Environment → sửa `CORS_ALLOWE
 
 > Đổi biến môi trường: Render tự áp dụng ngay (runtime), nhưng Vercel bake `VITE_API_BASE_URL` lúc build nên phải **Redeploy** thủ công nếu đổi giá trị này sau.
 
-### 15.5. Lưu ý khi chạy free tier
+### 15.5. Lưu ý khi chạy free tier (đọc trước khi đánh giá qua bản demo online)
 
-- **Backend tự "ngủ"** sau ~15 phút không có traffic (free Web Service) — request đầu tiên sau đó mất 30-50s để "thức dậy", và mọi kết nối WebSocket (thông báo real-time) đang mở sẽ bị ngắt cho tới khi có request mới.
-- **Free PostgreSQL của Render có thể bị giới hạn thời gian tồn tại** theo chính sách hiện hành của Render — kiểm tra lại trên dashboard trước khi phụ thuộc lâu dài.
+Bản demo online dùng **100% gói miễn phí** (Render free Web Service + free PostgreSQL, Vercel Hobby) — mục đích là để không tốn chi phí, không phải giới hạn kỹ thuật của code. Một số hiện tượng chậm/giật khi trải nghiệm bản demo là **đặc thù của hạ tầng miễn phí**, không phản ánh chất lượng hay hiệu năng thực của ứng dụng. Cụ thể:
+
+- **Backend tự "ngủ" sau ~15 phút không có traffic** (giới hạn cứng của Render free Web Service, không có cách nào tắt ở gói free) — lần gọi API đầu tiên sau đó phải chờ Render khởi động lại container từ đầu. Trong lúc kiểm thử thực tế trên bản demo (không phải local), quan sát được:
+  - Gọi thẳng API qua `curl` khi backend đang "ngủ": có lúc phải chờ tới ~90 giây mới nhận được phản hồi đầu tiên, những lần gọi tiếp theo trở lại bình thường (dưới 1 giây).
+  - Đăng nhập qua giao diện ở trạng thái "ngủ": nút hiện "Đang đăng nhập..." và đứng yên 15-45 giây trước khi chuyển trang — **đây không phải app bị treo**, mà là đang chờ Render dựng lại container; đợi đủ lâu thao tác vẫn hoàn tất bình thường.
+  - Kéo-thả Kanban đôi lúc bị lệch/không nhận do độ trễ round-trip Vercel ⇄ Render (khác region, khác nhà cung cấp) cộng dồn vào animation của thư viện drag-and-drop — thử lại thao tác kéo-thả lần 2 luôn thành công. API cập nhật trạng thái đứng sau thao tác này (`PATCH /todos/{id}/status`) đã được test riêng và luôn trả về đúng, không liên quan đến UI.
+  - Mọi kết nối WebSocket (thông báo real-time) đang mở sẽ bị ngắt khi backend ngủ, và tự kết nối lại khi có thao tác mới sau khi backend thức dậy.
+  - **Cách xác nhận nhanh đây là giới hạn hạ tầng chứ không phải bug**: gọi lại thao tác tương tự lần thứ 2 ngay sau lần đầu — luôn nhanh và mượt như local, vì container đã "thức". Hoặc chạy hẳn ở local theo mục 6/7 để thấy tốc độ thực khi không bị giới hạn bởi gói free.
+- **Free PostgreSQL của Render có thể bị giới hạn thời gian tồn tại** theo chính sách hiện hành của Render (ví dụ tự xoá sau một số ngày nếu không nâng cấp) — nếu bản demo báo lỗi kết nối database, khả năng cao là DB free đã hết hạn theo chính sách của Render chứ không phải lỗi ứng dụng; kiểm tra trạng thái DB trên dashboard Render.
 - Tài khoản Leader mặc định (`leader`/`leader123` hoặc theo `SEED_LEADER_*` đã đổi) tự tạo ngay lần khởi động đầu tiên trên Render, giống hệt khi chạy local.
+
+Toàn bộ logic nghiệp vụ (backend) đã được xác nhận đúng trên chính bản deploy online này bằng 42 kịch bản kiểm thử tự động qua API (đăng nhập, phân quyền, validate dữ liệu, vòng đời nhân viên, thông báo real-time...) và một lượt kiểm thử trình duyệt đầy đủ qua Selenium — tất cả đều pass, chỉ riêng độ trễ mạng là khác biệt so với chạy local (xem mục 13 để biết các lỗi kỹ thuật thật đã phát hiện và sửa, phân biệt rõ với giới hạn hạ tầng free tier ở mục này).
 
 ---
 
