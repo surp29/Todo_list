@@ -99,12 +99,15 @@ public class UserServiceImpl implements UserService {
                         "Chỉ có thể xóa hẳn tài khoản đã bị vô hiệu hóa (nghỉ việc) — hãy xóa lần đầu để vô hiệu hóa trước");
             }
             notificationRepository.clearActor(employee);
+            notificationRepository.deleteByRecipient(employee);
             todoRepository.deleteByAssignee(employee);
             userRepository.delete(employee);
             return "Đã xóa hẳn tài khoản nhân viên và toàn bộ lịch sử công việc liên quan";
         }
 
-        boolean hasHistory = todoRepository.existsByAssignee(employee) || notificationRepository.existsByActor(employee);
+        boolean hasHistory = todoRepository.existsByAssignee(employee)
+                || notificationRepository.existsByActor(employee)
+                || notificationRepository.existsByRecipient(employee);
         if (!hasHistory) {
             userRepository.delete(employee);
             return "Đã xóa tài khoản nhân viên";

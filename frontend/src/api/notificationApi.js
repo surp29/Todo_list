@@ -7,3 +7,7 @@ export function listNotifications() {
 export function markNotificationAsRead(id) {
   return apiClient.patch(`/notifications/${id}/read`).then((res) => res.data);
 }
+
+export function markAllNotificationsAsRead() {
+  return apiClient.patch('/notifications/read-all').then((res) => res.data);
+}

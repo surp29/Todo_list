@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import Layout from '../components/Layout';
 import TodoList from '../components/TodoList';
 import KanbanBoard from '../components/KanbanBoard';
@@ -8,6 +8,7 @@ import Pagination from '../components/Pagination';
 import Toast from '../components/Toast';
 import useTodos from '../hooks/useTodos';
 import { useAuth } from '../context/AuthContext';
+import { useNotificationListener } from '../context/NotificationContext';
 import { ALL_PAGE_SIZE, DEFAULT_PAGE_SIZE } from '../utils/constants';
 
 export default function EmployeeDashboard() {
@@ -29,6 +30,17 @@ export default function EmployeeDashboard() {
     fetchTodos,
     clearToast,
   } = useTodos();
+
+  // The Leader assigning a new task happens in a session this dashboard doesn't
+  // own — refetch live instead of waiting for the employee to reload the page.
+  useNotificationListener(
+    useCallback(
+      (notification) => {
+        if (notification.type === 'TASK_ASSIGNED') fetchTodos();
+      },
+      [fetchTodos]
+    )
+  );
 
   const [view, setView] = useState('list');
 

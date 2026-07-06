@@ -21,6 +21,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     boolean existsByActor(User actor);
 
+    boolean existsByRecipient(User recipient);
+
     /**
      * Detaches a user from any notification where they are the actor (e.g. "X completed
      * task Y"), used before permanently deleting their account so the FK constraint
@@ -30,4 +32,18 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Modifying
     @Query("UPDATE Notification n SET n.actor = null WHERE n.actor = :actor")
     void clearActor(@Param("actor") User actor);
+
+    /**
+     * Deletes notifications addressed to this recipient (e.g. "you were assigned task X"),
+     * used before permanently deleting their account. Unlike actor references, recipient is
+     * a required field, so it can't just be nulled out — and a notification addressed to an
+     * account that no longer exists has no reader left to show it to anyway.
+     */
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.recipient = :recipient")
+    void deleteByRecipient(@Param("recipient") User recipient);
+
+    @Modifying
+    @Query("UPDATE Notification n SET n.isRead = true WHERE n.recipient = :recipient AND n.isRead = false")
+    void markAllAsRead(@Param("recipient") User recipient);
 }

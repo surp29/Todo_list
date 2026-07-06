@@ -20,6 +20,14 @@ public interface NotificationService {
     void notifyTaskCompleted(Todo todo);
 
     /**
+     * Notifies the assignee of {@code todo} that a Leader has just assigned it to them.
+     * Persists the notification and pushes it in real time over WebSocket.
+     *
+     * @param todo the newly assigned todo
+     */
+    void notifyTaskAssigned(Todo todo);
+
+    /**
      * Lists notifications for the given recipient, most recent first.
      *
      * @param recipient the user the notifications belong to
@@ -34,4 +42,11 @@ public interface NotificationService {
      * @param recipient      the user attempting to mark it read
      */
     void markAsRead(Long notificationId, User recipient);
+
+    /**
+     * Marks every unread notification belonging to {@code recipient} as read.
+     *
+     * @param recipient the user whose notifications should all be marked read
+     */
+    void markAllAsRead(User recipient);
 }

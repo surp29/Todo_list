@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { FiBarChart2, FiPlus, FiUsers } from 'react-icons/fi';
 import Layout from '../components/Layout';
 import TodoList from '../components/TodoList';
@@ -13,6 +13,7 @@ import EmployeeManager from '../components/EmployeeManager';
 import ProductivityChart from '../components/ProductivityChart';
 import useTodos from '../hooks/useTodos';
 import useEmployees from '../hooks/useEmployees';
+import { useNotificationListener } from '../context/NotificationContext';
 import { ALL_PAGE_SIZE, DEFAULT_PAGE_SIZE } from '../utils/constants';
 
 export default function LeaderDashboard() {
@@ -38,6 +39,17 @@ export default function LeaderDashboard() {
   } = useTodos({ withAssignee: true });
 
   const { employees, activeEmployees, createEmployee, updateEmployee, resetPassword, removeEmployee } = useEmployees();
+
+  // An employee completing a task changes it in a session this dashboard doesn't
+  // own — refetch live instead of waiting for the Leader to reload the page.
+  useNotificationListener(
+    useCallback(
+      (notification) => {
+        if (notification.type === 'TASK_COMPLETED') fetchTodos();
+      },
+      [fetchTodos]
+    )
+  );
 
   const [tab, setTab] = useState('tasks'); // 'tasks' | 'productivity'
   const [view, setView] = useState('list'); // 'list' | 'board'

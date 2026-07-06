@@ -2,6 +2,8 @@ package com.example.todolist.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -40,6 +42,14 @@ public class Notification extends AuditableEntity {
 
     @Column(nullable = false, length = 500)
     private String message;
+
+    // Nullable (rather than nullable = false) so that adding this column via
+    // ddl-auto=update never fails on a database with pre-existing notification rows.
+    // Notifications persisted before this field existed are simply treated as
+    // TASK_COMPLETED on the frontend (the only kind that existed at the time).
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private NotificationType type;
 
     @Column(name = "is_read", nullable = false)
     @Builder.Default

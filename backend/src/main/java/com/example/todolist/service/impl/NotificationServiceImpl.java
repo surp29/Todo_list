@@ -3,6 +3,7 @@ package com.example.todolist.service.impl;
 import com.example.todolist.dto.NotificationResponseDTO;
 import com.example.todolist.exception.NotificationNotFoundException;
 import com.example.todolist.model.Notification;
+import com.example.todolist.model.NotificationType;
 import com.example.todolist.model.Todo;
 import com.example.todolist.model.User;
 import com.example.todolist.repository.NotificationRepository;
@@ -35,23 +36,38 @@ public class NotificationServiceImpl implements NotificationService {
     public void notifyTaskCompleted(Todo todo) {
         User leader = todo.getCreatedBy();
         User employee = todo.getAssignee();
-
         String message = String.format("%s đã hoàn thành công việc \"%s\"",
                 employee.getFullName(), todo.getTitle());
+        createAndPush(leader, employee, todo, message, NotificationType.TASK_COMPLETED);
+    }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void notifyTaskAssigned(Todo todo) {
+        User employee = todo.getAssignee();
+        User leader = todo.getCreatedBy();
+        String message = String.format("%s đã giao cho bạn công việc mới: \"%s\"",
+                leader.getFullName(), todo.getTitle());
+        createAndPush(employee, leader, todo, message, NotificationType.TASK_ASSIGNED);
+    }
+
+    private void createAndPush(User recipient, User actor, Todo todo, String message, NotificationType type) {
         Notification notification = Notification.builder()
-                .recipient(leader)
-                .actor(employee)
+                .recipient(recipient)
+                .actor(actor)
                 .relatedTodoId(todo.getId())
                 .todoTitle(todo.getTitle())
                 .message(message)
+                .type(type)
                 .isRead(false)
                 .build();
 
         Notification saved = notificationRepository.save(notification);
 
         messagingTemplate.convertAndSendToUser(
-                leader.getUsername(), QUEUE_DESTINATION, NotificationResponseDTO.from(saved));
+                recipient.getUsername(), QUEUE_DESTINATION, NotificationResponseDTO.from(saved));
     }
 
     /**
@@ -74,5 +90,13 @@ public class NotificationServiceImpl implements NotificationService {
                 .orElseThrow(() -> new NotificationNotFoundException("Không tìm thấy thông báo với id: " + notificationId));
         notification.setRead(true);
         notificationRepository.save(notification);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void markAllAsRead(User recipient) {
+        notificationRepository.markAllAsRead(recipient);
     }
 }

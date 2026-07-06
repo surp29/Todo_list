@@ -53,6 +53,7 @@ public class TodoServiceImpl implements TodoService {
         todo.setCreatedBy(currentUser);
 
         Todo saved = todoRepository.save(todo);
+        notificationService.notifyTaskAssigned(saved);
         return todoMapper.toResponseDTO(saved);
     }
 

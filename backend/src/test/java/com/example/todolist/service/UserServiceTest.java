@@ -157,6 +157,22 @@ class UserServiceTest {
     }
 
     @Test
+    void test_removeEmployee_onlyOrphanedTaskAssignedNotification_deactivatesInstead() {
+        // No todos currently assigned (e.g. the leader deleted the task after assigning it),
+        // but the employee still has a "you were assigned task X" notification as recipient.
+        when(userRepository.findById(2L)).thenReturn(Optional.of(employee));
+        when(todoRepository.existsByAssignee(employee)).thenReturn(false);
+        when(notificationRepository.existsByRecipient(employee)).thenReturn(true);
+
+        String message = userService.removeEmployee(2L, false);
+
+        assertThat(employee.isActive()).isFalse();
+        verify(userRepository, times(1)).save(employee);
+        verify(userRepository, never()).delete(any());
+        assertThat(message).containsIgnoringCase("vô hiệu hóa");
+    }
+
+    @Test
     void test_removeEmployee_forceOnDeactivatedAccount_permanentlyDeletesEverything() {
         employee.setActive(false);
         when(userRepository.findById(2L)).thenReturn(Optional.of(employee));
@@ -164,6 +180,7 @@ class UserServiceTest {
         String message = userService.removeEmployee(2L, true);
 
         verify(notificationRepository, times(1)).clearActor(employee);
+        verify(notificationRepository, times(1)).deleteByRecipient(employee);
         verify(todoRepository, times(1)).deleteByAssignee(employee);
         verify(userRepository, times(1)).delete(employee);
         assertThat(message).containsIgnoringCase("xóa hẳn");

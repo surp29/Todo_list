@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { FiBell, FiCheckCircle } from 'react-icons/fi';
-import useNotifications from '../hooks/useNotifications';
+import { FiBell, FiCheckCircle, FiClipboard } from 'react-icons/fi';
+import { useNotifications } from '../context/NotificationContext';
 
 function timeAgo(dateStr) {
   const diffMs = Date.now() - new Date(dateStr).getTime();
@@ -12,8 +12,15 @@ function timeAgo(dateStr) {
   return `${Math.floor(hours / 24)} ngày trước`;
 }
 
+function NotificationIcon({ type }) {
+  if (type === 'TASK_ASSIGNED') {
+    return <FiClipboard className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />;
+  }
+  return <FiCheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />;
+}
+
 export default function NotificationBell() {
-  const { notifications, unreadCount, markAsRead } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -41,8 +48,16 @@ export default function NotificationBell() {
 
       {open && (
         <div className="absolute right-0 z-40 mt-2 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
-          <div className="border-b border-slate-100 px-4 py-3">
+          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
             <h3 className="text-sm font-semibold text-slate-800">Thông báo</h3>
+            {unreadCount > 0 && (
+              <button
+                onClick={markAllAsRead}
+                className="text-xs font-medium text-indigo-600 transition hover:text-indigo-800"
+              >
+                Đã đọc toàn bộ
+              </button>
+            )}
           </div>
 
           <div className="max-h-96 overflow-y-auto">
@@ -57,7 +72,7 @@ export default function NotificationBell() {
                     n.read ? 'opacity-60' : ''
                   }`}
                 >
-                  <FiCheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                  <NotificationIcon type={n.type} />
                   <div className="min-w-0">
                     <p className="text-sm text-slate-700">{n.message}</p>
                     <p className="mt-0.5 text-xs text-slate-400">{timeAgo(n.createdAt)}</p>

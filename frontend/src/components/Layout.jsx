@@ -1,6 +1,6 @@
 import { FiCheckSquare, FiLogOut } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
-import { ROLE, ROLE_LABEL } from '../utils/constants';
+import { ROLE_LABEL } from '../utils/constants';
 import NotificationBell from './NotificationBell';
 
 export default function Layout({ children }) {
@@ -18,7 +18,7 @@ export default function Layout({ children }) {
           </div>
 
           <div className="flex items-center gap-3">
-            {user?.role === ROLE.LEADER && <NotificationBell />}
+            <NotificationBell />
 
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium leading-tight text-slate-700">{user?.fullName}</p>

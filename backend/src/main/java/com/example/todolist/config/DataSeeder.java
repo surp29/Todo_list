@@ -45,6 +45,6 @@ public class DataSeeder implements CommandLineRunner {
                 .build();
 
         userRepository.save(leader);
-        log.info("Da tao tai khoan Leader mac dinh: username='{}'", leaderUsername);
+        log.info("Đã tạo tài khoản Leader mặc định: username='{}'", leaderUsername);
     }
 }

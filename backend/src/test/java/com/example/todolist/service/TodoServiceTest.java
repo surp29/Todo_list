@@ -111,6 +111,7 @@ class TodoServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getTitle()).isEqualTo("Học Spring Boot");
         verify(todoRepository, times(1)).save(todo);
+        verify(notificationService, times(1)).notifyTaskAssigned(todo);
     }
 
     @Test
@@ -127,6 +128,7 @@ class TodoServiceTest {
                 .hasMessageContaining("Tiêu đề");
 
         verify(todoRepository, never()).save(any());
+        verify(notificationService, never()).notifyTaskAssigned(any());
     }
 
     @Test

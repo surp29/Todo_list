@@ -1,6 +1,7 @@
 package com.example.todolist.dto;
 
 import com.example.todolist.model.Notification;
+import com.example.todolist.model.NotificationType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,6 +25,7 @@ public class NotificationResponseDTO {
     private Long relatedTodoId;
     private String todoTitle;
     private String actorName;
+    private NotificationType type;
     private boolean isRead;
     private LocalDateTime createdAt;
 
@@ -34,6 +36,9 @@ public class NotificationResponseDTO {
                 .relatedTodoId(notification.getRelatedTodoId())
                 .todoTitle(notification.getTodoTitle())
                 .actorName(notification.getActor() != null ? notification.getActor().getFullName() : null)
+                // Notifications persisted before `type` existed have a null column value;
+                // they were all task-completed alerts back then (the only kind that existed).
+                .type(notification.getType() != null ? notification.getType() : NotificationType.TASK_COMPLETED)
                 .isRead(notification.isRead())
                 .createdAt(notification.getCreatedAt())
                 .build();

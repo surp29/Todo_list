@@ -41,4 +41,11 @@ public class NotificationController {
         notificationService.markAsRead(id, currentUser);
         return ApiResponseDTO.success("Đã đánh dấu đã đọc", null);
     }
+
+    @Operation(summary = "Đánh dấu toàn bộ thông báo của tài khoản đang đăng nhập là đã đọc")
+    @PatchMapping("/read-all")
+    public ApiResponseDTO<Void> markAllAsRead(@AuthenticationPrincipal User currentUser) {
+        notificationService.markAllAsRead(currentUser);
+        return ApiResponseDTO.success("Đã đánh dấu tất cả đã đọc", null);
+    }
 }

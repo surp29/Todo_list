@@ -3,6 +3,7 @@ package com.example.todolist.service;
 import com.example.todolist.dto.NotificationResponseDTO;
 import com.example.todolist.exception.NotificationNotFoundException;
 import com.example.todolist.model.Notification;
+import com.example.todolist.model.NotificationType;
 import com.example.todolist.model.Role;
 import com.example.todolist.model.Todo;
 import com.example.todolist.model.TodoPriority;
@@ -94,10 +95,36 @@ class NotificationServiceImplTest {
         assertThat(saved.getRelatedTodoId()).isEqualTo(10L);
         assertThat(saved.getTodoTitle()).isEqualTo("Viet bao cao");
         assertThat(saved.getMessage()).contains("Nguyen Van A").contains("Viet bao cao");
+        assertThat(saved.getType()).isEqualTo(NotificationType.TASK_COMPLETED);
         assertThat(saved.isRead()).isFalse();
 
         verify(messagingTemplate, times(1))
                 .convertAndSendToUser(eq("truongnhom"), eq("/queue/notifications"), any(NotificationResponseDTO.class));
+    }
+
+    @Test
+    void test_notifyTaskAssigned_savesAndPushesToEmployee() {
+        when(notificationRepository.save(any(Notification.class))).thenAnswer(inv -> {
+            Notification n = inv.getArgument(0);
+            n.setId(101L);
+            return n;
+        });
+
+        notificationService.notifyTaskAssigned(todo);
+
+        ArgumentCaptor<Notification> notificationCaptor = ArgumentCaptor.forClass(Notification.class);
+        verify(notificationRepository, times(1)).save(notificationCaptor.capture());
+
+        Notification saved = notificationCaptor.getValue();
+        assertThat(saved.getRecipient()).isEqualTo(employee);
+        assertThat(saved.getActor()).isEqualTo(leader);
+        assertThat(saved.getRelatedTodoId()).isEqualTo(10L);
+        assertThat(saved.getMessage()).contains("Tran Van Truong").contains("Viet bao cao");
+        assertThat(saved.getType()).isEqualTo(NotificationType.TASK_ASSIGNED);
+        assertThat(saved.isRead()).isFalse();
+
+        verify(messagingTemplate, times(1))
+                .convertAndSendToUser(eq("nhanvien"), eq("/queue/notifications"), any(NotificationResponseDTO.class));
     }
 
     @Test
@@ -119,6 +146,8 @@ class NotificationServiceImplTest {
         assertThat(result.get(0).getId()).isEqualTo(100L);
         assertThat(result.get(0).getActorName()).isEqualTo("Nguyen Van A");
         assertThat(result.get(0).isRead()).isFalse();
+        // Pre-existing notifications with no `type` column value default to TASK_COMPLETED.
+        assertThat(result.get(0).getType()).isEqualTo(NotificationType.TASK_COMPLETED);
     }
 
     @Test
@@ -145,5 +174,12 @@ class NotificationServiceImplTest {
                 .isInstanceOf(NotificationNotFoundException.class);
 
         verify(notificationRepository, never()).save(any());
+    }
+
+    @Test
+    void test_markAllAsRead_delegatesToRepositoryBulkUpdate() {
+        notificationService.markAllAsRead(leader);
+
+        verify(notificationRepository, times(1)).markAllAsRead(leader);
     }
 }
